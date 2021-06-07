@@ -7,6 +7,30 @@ include '../conexion.php';
 //recibir contenido en formato JSON
 //$contenido = file_get_contents('php://input');  contenido = a lo que obtengas de la entrada de datos
 
+    if($_SERVER['REQUEST_METHOD'] == 'POST'){
+        //var_dump($_POST);    
+        try{
+            $stmt2 = $conn->prepare("SELECT * FROM vendedores WHERE CURP = '{$_POST['curp']}'"); 
+            $stmt2->execute();
+
+            $result = $stmt2->setFetchMode(PDO::FETCH_ASSOC);
+            $result = $stmt2->fetchAll();
+
+            //print_r($result);
+            echo "agagagagaga";
+            if(!empty($result)){
+
+                $_SERVER['REQUEST_METHOD'] = 'PUT';
+            }
+        } catch(PDOException $e) {
+            echo "Error: " . $e->getMessage();
+        }
+        
+
+    } else {
+        echo "Algo ocurrio no se recibio curp como para trabajar";
+    }
+
 
 //Recibir las peticiones de los usuarios
 switch($_SERVER['REQUEST_METHOD']){
@@ -69,30 +93,51 @@ switch($_SERVER['REQUEST_METHOD']){
     break;
     //modificar un usuario PUT
     case 'PUT':
-        if(isset($_GET['id'])){
+        if(isset($_POST['curp'])){
             
-            $_PUT = json_decode(file_get_contents('php://input'), true);
-            $_PUT['nombre'] = "Carlo";
-            $respuesta['datos'] = $_PUT;
-            $respuesta['mensaje'] = "Se cambiaron los datos del usuario."; 
+            try{
+                $sql = "UPDATE vendedores SET Nombre='{$_POST['nombre']}',Apellido_Paterno='{$_POST['ape1']}',Apellido_Materno='{$_POST['ape2']}',Numero_Telefono='{$_POST['tel']}',Correo_electronico='{$_POST['email']}' WHERE CURP='{$_POST['curp']}'";
+                $stmt = $conn->prepare($sql);
+                $stmt->execute();
+
+                $result = $stmt->setFetchMode(PDO::FETCH_ASSOC); 
+                $result = $stmt->fetch();
+
+            } catch(PDOException $e) {
+                echo $sql . "<br>" . $e->getMessage();
+            }
+            
+            
+            $respuesta['datos'] = $result;
+            $respuesta['mensaje'] = "Se cambiaron los datos del usuario con curp {$_POST['curp']}."; 
             echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK);
             
 
         } else {
-            echo "Intentaste actualizar sin antes haber seleccionado un usuario";
+            $respuesta['mensaje'] = "Intentaste actualizar sin antes haber seleccionado un usuario";
+            echo json_encode($respuesta,  JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK);
         }
         
     break;
     //Eliminar un usuario DELETE
     case 'DELETE':
-        if(isset($_GET['id'])){
-            $_DELETE = json_decode(file_get_contents('php://input'), true);
-            $_DELETE['validado'] = false;
-            $respuesta['datos'] = $_DELETE;
-            $respuesta['mensaje'] = "Se suspendio el usaurio.";
-            echo json_encode($respuesta,JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK);
+        if(isset($_GET['curp'])){
+
+            try{
+                $sql = "UPDATE vendedores SET Validado='Suspendido' WHERE CURP='{$_GET['curp']}'";
+                $stmt = $conn->prepare($sql);
+                $stmt->execute();
+
+            } catch(PDOException $e) {
+                echo $sql . "<br>" . $e->getMessage();
+            }
+            echo "Se suspendio al usuario";
+            $conn = null;
+            //echo json_encode($respuesta,JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK);
         } else {
-            echo "Se intento suspender un usuario sin antes haber seleccionado su id";
+             
+            $respuesta['mensaje'] = "Se intento suspender un usuario sin antes haber seleccionado su id";
+            echo json_encode($respuesta['mensaje'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK);
         }
         
     break;

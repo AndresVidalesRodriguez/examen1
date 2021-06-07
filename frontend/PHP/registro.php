@@ -34,5 +34,5 @@ axios.post('http://localhost/proy_raul2/backend/api/usuarios.php', {
 </script>
 
 ";
-header('Location:../formulario.html');
+//header('Location:../formulario.html');
 ?>
